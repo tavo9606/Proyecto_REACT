@@ -35,11 +35,11 @@ body {
 }
 
 .formulario {
-  width: 90%;
-  max-width: 440px;
+  width: 70%;
+  max-width: 350px;
   background: var(--blanco);
-  padding: 40px 35px;
-  border-radius: 20px;
+  padding: 20px 22px;
+  border-radius: 16px;
   box-shadow: 0 20px 60px rgba(0,0,0,0.25);
   text-align: center;
   animation: fadeUp 0.5s ease;
@@ -50,17 +50,17 @@ body {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-.logo-container img { width: 90px; margin-bottom: 10px; }
+.logo-container img { width: 60px; margin-bottom: 6px; }
 .nombre-hospital { font-family: 'Syne', sans-serif; font-size: 20px; color: var(--azul); }
-.formulario h1 { font-size: 22px; margin-bottom: 24px; color: #1e293b; }
+.formulario h1 { font-size: 16px; margin-bottom: 16px; color: #1e293b; }
 
-.input-box { position: relative; margin: 20px 0; text-align: left; }
+.input-box { position: relative; margin: 14px 0; text-align: left; }
 .input-box input {
   width: 100%;
-  padding: 14px 12px;
+  padding: 10px 12px;
   border: 2px solid #cbd5e1;
   border-radius: 10px;
-  font-size: 14px;
+  font-size: 13px;
   outline: none;
   transition: 0.2s;
   font-family: 'DM Sans', sans-serif;
@@ -82,14 +82,14 @@ body {
   top: -8px; font-size: 12px; color: var(--azul);
 }
 
-.rol-container { text-align: left; margin-bottom: 18px; }
-.rol-container label { font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 6px; display: block; }
+.rol-container { text-align: left; margin-bottom: 10px; }
+.rol-container label { font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px; display: block; }
 .rol-container select, select {
   width: 100%;
-  padding: 12px;
+  padding: 9px 10px;
   border: 2px solid #cbd5e1;
   border-radius: 10px;
-  font-size: 14px;
+  font-size: 13px;
   font-family: 'DM Sans', sans-serif;
   outline: none;
   background: var(--blanco);
@@ -97,23 +97,23 @@ body {
 }
 .rol-container select:focus, select:focus { border-color: var(--azul); }
 
-.recordar { text-align: right; margin-bottom: 16px; }
+.recordar { text-align: center; margin-bottom: 10px; }
 .recordar a, .registrarse a { color: var(--azul); text-decoration: none; font-size: 13px; }
 .recordar a:hover, .registrarse a:hover { text-decoration: underline; }
 
 .btn-login {
   width: 100%;
-  padding: 14px;
+  padding: 10px;
   background: var(--azul);
   border: none;
   border-radius: 10px;
   color: var(--blanco);
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: 0.2s;
   font-family: 'DM Sans', sans-serif;
-  margin-bottom: 15px;
+  margin-bottom: 10px;
 }
 .btn-login:hover { background: var(--azul-oscuro); transform: translateY(-1px); }
 

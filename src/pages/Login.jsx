@@ -23,8 +23,10 @@ export default function Login({ navegar }) {
       const data = await res.json();
 
       if (res.ok) {
-        localStorage.setItem("rol", form.rol);
-        localStorage.setItem("usuario", form.usuario);
+        localStorage.setItem("rol", data.rol);
+        localStorage.setItem("usuario", data.usuario);
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("usuario_id", data.id);
 
         const rutas = {
           medico: "panel_medico",
@@ -49,7 +51,7 @@ export default function Login({ navegar }) {
           <img src="https://cdn-icons-png.flaticon.com/512/2966/2966327.png" alt="Logo" />
         </div>
         <h2 className="nombre-hospital">Hospital Vida Sana</h2>
-        <h1>Acceso al Sistema</h1>
+        <h1>Inicio de Sesión</h1>
 
         <form onSubmit={handleSubmit} className="col1" style={{ marginBottom: 0 }}>
           <div className="input-box">
@@ -80,7 +82,7 @@ export default function Login({ navegar }) {
             <a href="#">¿Olvidó su contraseña?</a>
           </div>
 
-          <button type="submit" className="btn-login">Entrar al Portal</button>
+          <button type="submit" className="btn-login">Iniciar sesion</button>
 
           <div className="registrarse">
             ¿No tienes cuenta?{" "}

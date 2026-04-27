@@ -1,19 +1,26 @@
 import { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
 
-const API = "http://localhost:3000/pacientes";
+const API = "http://localhost:3000";
+
+const authHeaders = () => ({
+  "Content-Type": "application/json",
+  Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+});
 
 const menuItems = [
   { id: "registroPaciente", label: "👤 Registrar / Consultar Paciente" },
   { id: "historiaMedica",   label: "📄 Historia Clínica" },
   { id: "tratamientos",     label: "💊 Registrar Tratamiento" },
   { id: "hospitalizacion",  label: "🏥 Hospitalización" },
+  { id: "medicos",          label: "🩺 Médicos Registrados" },
   { id: "reportes",         label: "📊 Reportes Médicos" },
 ];
 
 export default function PanelMedico({ navegar }) {
   const [activo, setActivo] = useState("registroPaciente");
   const [pacientes, setPacientes] = useState([]);
+  const [medicos, setMedicos] = useState([]);
   const [busqueda, setBusqueda] = useState("");
   const [formPaciente, setFormPaciente] = useState({
     nombre: "", documento: "", edad: "", sexo: "Masculino", telefono: "", direccion: "",
@@ -22,23 +29,34 @@ export default function PanelMedico({ navegar }) {
   // ── Cargar pacientes ──
   const cargar = async () => {
     try {
-      const res = await fetch(API);
+      const res = await fetch(`${API}/pacientes`, { headers: authHeaders() });
       const data = await res.json();
-      setPacientes(data);
+      setPacientes(Array.isArray(data) ? data : []);
     } catch { setPacientes([]); }
   };
 
-  useEffect(() => { cargar(); }, []);
+  // ── Cargar médicos ──
+  const cargarMedicos = async () => {
+    try {
+      const res = await fetch(`${API}/usuarios?rol=medico`, { headers: authHeaders() });
+      const data = await res.json();
+      setMedicos(Array.isArray(data) ? data : []);
+    } catch { setMedicos([]); }
+  };
+
+  useEffect(() => { cargar(); cargarMedicos(); }, []);
 
   // ── Guardar paciente ──
   const guardarPaciente = async (e) => {
     e.preventDefault();
     try {
-      await fetch(API, {
+      const res = await fetch(`${API}/pacientes`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders(),
         body: JSON.stringify(formPaciente),
       });
+      const data = await res.json();
+      if (!res.ok) { alert("❌ " + (data.error || "Error al guardar")); return; }
       setFormPaciente({ nombre: "", documento: "", edad: "", sexo: "Masculino", telefono: "", direccion: "" });
       cargar();
     } catch { alert("Error al guardar paciente"); }
@@ -47,7 +65,7 @@ export default function PanelMedico({ navegar }) {
   // ── Eliminar ──
   const eliminar = async (id) => {
     if (!window.confirm("¿Eliminar paciente?")) return;
-    await fetch(`${API}/${id}`, { method: "DELETE" });
+    await fetch(`${API}/pacientes/${id}`, { method: "DELETE", headers: authHeaders() });
     cargar();
   };
 
@@ -55,9 +73,9 @@ export default function PanelMedico({ navegar }) {
   const buscar = async () => {
     if (!busqueda) { cargar(); return; }
     try {
-      const res = await fetch(`${API}?search=${busqueda}`);
+      const res = await fetch(`${API}/pacientes?search=${busqueda}`, { headers: authHeaders() });
       const data = await res.json();
-      setPacientes(data);
+      setPacientes(Array.isArray(data) ? data : []);
     } catch { setPacientes([]); }
   };
 
@@ -182,6 +200,32 @@ export default function PanelMedico({ navegar }) {
               </select>
               <button type="button">Registrar</button>
             </form>
+          </div>
+
+          {/* 🩺 MÉDICOS */}
+          <div className={`panel ${activo === "medicos" ? "active" : ""}`}>
+            <h2>Médicos Registrados</h2>
+            <button onClick={cargarMedicos} className="btn-gray" style={{ marginBottom: 16 }}>Actualizar</button>
+            <table>
+              <thead>
+                <tr>
+                  <th>Nombre</th><th>Usuario</th><th>Cédula</th><th>Email</th>
+                </tr>
+              </thead>
+              <tbody>
+                {medicos.map((m) => (
+                  <tr key={m.id}>
+                    <td>{m.nombres || "—"}</td>
+                    <td>{m.usuario}</td>
+                    <td>{m.cedula || "—"}</td>
+                    <td>{m.email || "—"}</td>
+                  </tr>
+                ))}
+                {medicos.length === 0 && (
+                  <tr><td colSpan={4} style={{ textAlign: "center", color: "#94a3b8" }}>No hay médicos registrados</td></tr>
+                )}
+              </tbody>
+            </table>
           </div>
 
           {/* 📊 REPORTES */}
