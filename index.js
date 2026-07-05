@@ -8,7 +8,11 @@ import express from 'express';
 import cors from 'cors';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { pool } from './db.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 const PORT = 3000;
@@ -29,6 +33,10 @@ app.use(cors({
 // express.json(): permite que el servidor pueda recibir y entender datos
 // enviados en formato JSON en las peticiones (req.body)
 app.use(express.json());
+
+// Sirve el frontend (React compilado con "npm run build") desde la misma app,
+// asi sgihgvc.com/ responde con el sitio en vez de exigir token de la API
+app.use(express.static(path.join(__dirname, 'dist')));
 
 // ──────────────────────────────────────────────
 // CREACIÓN DE TABLAS
