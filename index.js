@@ -18,7 +18,7 @@ const JWT_SECRET = 'hospital_vida_sana_2024';
 
 // cors: permite que el frontend (por ejemplo React en http://localhost:5173)
 // pueda hacer peticiones a esta API sin ser bloqueado por el navegador (política CORS)
-app.use(cors({ origin: 'http://localhost:5173' }));
+app.use(cors({ origin: ['http://localhost:5173', 'http://localhost:4200'] }));
 // express.json(): permite que el servidor pueda recibir y entender datos
 // enviados en formato JSON en las peticiones (req.body)
 app.use(express.json());
