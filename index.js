@@ -221,7 +221,8 @@ app.post('/login', async (req, res) => {
       { expiresIn: '8h' }
     );
     res.json({ mensaje: `Bienvenido, ${user.nombres || user.usuario}`, token, rol: user.rol, usuario: user.usuario, id: user.id });
-  } catch {
+  } catch (err) {
+    console.error('Error en /login:', err.message);
     res.status(500).json({ error: 'Error interno' });
   }
 });
