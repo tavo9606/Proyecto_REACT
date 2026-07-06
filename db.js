@@ -1,12 +1,19 @@
 import pkg from 'pg';
 const { Pool } = pkg;
 
+try {
+  process.loadEnvFile();
+} catch {
+  // No hay .env (por ejemplo en producción, donde el hosting ya define las variables)
+}
+
 export const pool = new Pool({
   host:     process.env.DB_HOST     || 'localhost',
   user:     process.env.DB_USER     || 'postgres',
   password: process.env.DB_PASSWORD || '12345',
   database: process.env.DB_NAME     || 'Hospital',
   port:     parseInt(process.env.DB_PORT || '5432'),
+  ssl:      { rejectUnauthorized: false },
 });
 
 pool.connect()
