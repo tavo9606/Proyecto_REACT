@@ -3,7 +3,7 @@
 // - cors: permite la comunicación entre el frontend (React/Vite) y el backend
 // - bcryptjs: se utiliza para encriptar contraseñas y mejorar la seguridad
 // - jsonwebtoken: permite generar y validar tokens JWT para autenticación
-// - pool: conexión a la base de datos PostgreSQL
+// - pool: conexión a la base de datos MySQL
 import express from 'express';
 import cors from 'cors';
 import bcrypt from 'bcryptjs';
@@ -45,7 +45,7 @@ async function crearTablas() {
   try {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS usuarios (
-        id SERIAL PRIMARY KEY,
+        id INT AUTO_INCREMENT PRIMARY KEY,
         usuario VARCHAR(100) UNIQUE NOT NULL,
         password VARCHAR(255) NOT NULL,
         rol VARCHAR(50) NOT NULL,
@@ -53,55 +53,59 @@ async function crearTablas() {
         cedula VARCHAR(50),
         email VARCHAR(150),
         fecha_nacimiento DATE,
-        creado_en TIMESTAMP DEFAULT NOW()
+        creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
 
     await pool.query(`
       CREATE TABLE IF NOT EXISTS pacientes (
-        id SERIAL PRIMARY KEY,
+        id INT AUTO_INCREMENT PRIMARY KEY,
         nombre VARCHAR(200) NOT NULL,
         documento VARCHAR(50) UNIQUE NOT NULL,
         edad INT,
         sexo VARCHAR(20),
         telefono VARCHAR(30),
         direccion VARCHAR(300),
-        creado_en TIMESTAMP DEFAULT NOW()
+        creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
 
     await pool.query(`
       CREATE TABLE IF NOT EXISTS historias_clinicas (
-        id SERIAL PRIMARY KEY,
-        paciente_id INT REFERENCES pacientes(id) ON DELETE CASCADE,
-        medico_id INT REFERENCES usuarios(id),
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        paciente_id INT,
+        medico_id INT,
         motivo_consulta TEXT,
         diagnostico TEXT,
         tratamiento TEXT,
         observaciones TEXT,
-        fecha TIMESTAMP DEFAULT NOW()
+        fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (paciente_id) REFERENCES pacientes(id) ON DELETE CASCADE,
+        FOREIGN KEY (medico_id) REFERENCES usuarios(id)
       );
     `);
 
     await pool.query(`
       CREATE TABLE IF NOT EXISTS tratamientos (
-        id SERIAL PRIMARY KEY,
-        paciente_id INT REFERENCES pacientes(id) ON DELETE CASCADE,
-        medico_id INT REFERENCES usuarios(id),
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        paciente_id INT,
+        medico_id INT,
         medicamento VARCHAR(200) NOT NULL,
         dosis VARCHAR(100),
         frecuencia VARCHAR(100),
         duracion VARCHAR(100),
         estado VARCHAR(50) DEFAULT 'activo',
-        fecha_inicio DATE DEFAULT NOW(),
+        fecha_inicio DATE DEFAULT (CURRENT_DATE),
         fecha_fin DATE,
-        notas TEXT
+        notas TEXT,
+        FOREIGN KEY (paciente_id) REFERENCES pacientes(id) ON DELETE CASCADE,
+        FOREIGN KEY (medico_id) REFERENCES usuarios(id)
       );
     `);
 
     await pool.query(`
       CREATE TABLE IF NOT EXISTS camas (
-        id SERIAL PRIMARY KEY,
+        id INT AUTO_INCREMENT PRIMARY KEY,
         numero VARCHAR(20) UNIQUE NOT NULL,
         piso VARCHAR(50),
         tipo VARCHAR(100),
@@ -111,50 +115,56 @@ async function crearTablas() {
 
     await pool.query(`
       CREATE TABLE IF NOT EXISTS hospitalizaciones (
-        id SERIAL PRIMARY KEY,
-        paciente_id INT REFERENCES pacientes(id) ON DELETE CASCADE,
-        cama_id INT REFERENCES camas(id),
-        medico_id INT REFERENCES usuarios(id),
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        paciente_id INT,
+        cama_id INT,
+        medico_id INT,
         diagnostico TEXT,
         estado VARCHAR(50) DEFAULT 'activo',
-        fecha_ingreso TIMESTAMP DEFAULT NOW(),
-        fecha_alta TIMESTAMP
+        fecha_ingreso TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        fecha_alta TIMESTAMP NULL,
+        FOREIGN KEY (paciente_id) REFERENCES pacientes(id) ON DELETE CASCADE,
+        FOREIGN KEY (cama_id) REFERENCES camas(id),
+        FOREIGN KEY (medico_id) REFERENCES usuarios(id)
       );
     `);
 
     await pool.query(`
       CREATE TABLE IF NOT EXISTS citas (
-        id SERIAL PRIMARY KEY,
-        paciente_id INT REFERENCES pacientes(id) ON DELETE CASCADE,
-        medico_id INT REFERENCES usuarios(id),
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        paciente_id INT,
+        medico_id INT,
         fecha DATE NOT NULL,
         hora TIME NOT NULL,
         motivo VARCHAR(300),
         estado VARCHAR(50) DEFAULT 'pendiente',
-        creado_en TIMESTAMP DEFAULT NOW()
+        creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (paciente_id) REFERENCES pacientes(id) ON DELETE CASCADE,
+        FOREIGN KEY (medico_id) REFERENCES usuarios(id)
       );
     `);
 
     await pool.query(`
       CREATE TABLE IF NOT EXISTS medicamentos (
-        id SERIAL PRIMARY KEY,
+        id INT AUTO_INCREMENT PRIMARY KEY,
         nombre VARCHAR(200) NOT NULL,
         descripcion TEXT,
         stock INT DEFAULT 0,
         unidad VARCHAR(50),
-        precio NUMERIC(10,2),
-        creado_en TIMESTAMP DEFAULT NOW()
+        precio DECIMAL(10,2),
+        creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
 
     await pool.query(`
       CREATE TABLE IF NOT EXISTS facturas (
-        id SERIAL PRIMARY KEY,
-        paciente_id INT REFERENCES pacientes(id) ON DELETE CASCADE,
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        paciente_id INT,
         descripcion TEXT,
-        total NUMERIC(10,2),
+        total DECIMAL(10,2),
         estado VARCHAR(50) DEFAULT 'pendiente',
-        fecha TIMESTAMP DEFAULT NOW()
+        fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (paciente_id) REFERENCES pacientes(id) ON DELETE CASCADE
       );
     `);
 
@@ -259,7 +269,7 @@ app.get('/pacientes', async (req, res) => {
     const { search } = req.query;
     const result = search
       ? await pool.query(
-          'SELECT * FROM pacientes WHERE nombre ILIKE $1 OR documento ILIKE $1 ORDER BY id DESC',
+          'SELECT * FROM pacientes WHERE nombre LIKE $1 OR documento LIKE $1 ORDER BY id DESC',
           [`%${search}%`]
         )
       : await pool.query('SELECT * FROM pacientes ORDER BY id DESC');
@@ -290,7 +300,7 @@ app.post('/pacientes', async (req, res) => {
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
-    if (err.code === '23505') return res.status(400).json({ error: 'El documento ya está registrado' });
+    if (err.code === 'ER_DUP_ENTRY') return res.status(400).json({ error: 'El documento ya está registrado' });
     res.status(500).json({ error: 'Error al crear paciente' });
   }
 });
@@ -307,7 +317,7 @@ app.put('/pacientes/:id', async (req, res) => {
     if (result.rows.length === 0) return res.status(404).json({ error: 'Paciente no encontrado' });
     res.json(result.rows[0]);
   } catch (err) {
-    if (err.code === '23505') return res.status(400).json({ error: 'El documento ya está en uso' });
+    if (err.code === 'ER_DUP_ENTRY') return res.status(400).json({ error: 'El documento ya está en uso' });
     res.status(500).json({ error: 'Error al actualizar paciente' });
   }
 });
@@ -477,7 +487,7 @@ app.post('/camas', async (req, res) => {
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
-    if (err.code === '23505') return res.status(400).json({ error: 'El número de cama ya existe' });
+    if (err.code === 'ER_DUP_ENTRY') return res.status(400).json({ error: 'El número de cama ya existe' });
     res.status(500).json({ error: 'Error al crear cama' });
   }
 });
@@ -694,7 +704,7 @@ app.get('/medicamentos', async (req, res) => {
   try {
     const { search } = req.query;
     const result = search
-      ? await pool.query('SELECT * FROM medicamentos WHERE nombre ILIKE $1 ORDER BY nombre', [`%${search}%`])
+      ? await pool.query('SELECT * FROM medicamentos WHERE nombre LIKE $1 ORDER BY nombre', [`%${search}%`])
       : await pool.query('SELECT * FROM medicamentos ORDER BY nombre');
     res.json(result.rows);
   } catch {
@@ -899,12 +909,12 @@ app.get('/estadisticas', async (req, res) => {
       citasHoy,
       facturasPendientes,
     ] = await Promise.all([
-      pool.query('SELECT COUNT(*) FROM pacientes'),
-      pool.query('SELECT COUNT(*) FROM usuarios'),
-      pool.query("SELECT COUNT(*) FROM hospitalizaciones WHERE estado='activo'"),
-      pool.query("SELECT COUNT(*) FROM camas WHERE estado='disponible'"),
-      pool.query('SELECT COUNT(*) FROM citas WHERE fecha=CURRENT_DATE'),
-      pool.query("SELECT COUNT(*), COALESCE(SUM(total),0) AS total FROM facturas WHERE estado='pendiente'"),
+      pool.query('SELECT COUNT(*) AS count FROM pacientes'),
+      pool.query('SELECT COUNT(*) AS count FROM usuarios'),
+      pool.query("SELECT COUNT(*) AS count FROM hospitalizaciones WHERE estado='activo'"),
+      pool.query("SELECT COUNT(*) AS count FROM camas WHERE estado='disponible'"),
+      pool.query('SELECT COUNT(*) AS count FROM citas WHERE fecha=CURRENT_DATE'),
+      pool.query("SELECT COUNT(*) AS count, COALESCE(SUM(total),0) AS total FROM facturas WHERE estado='pendiente'"),
     ]);
     res.json({
       pacientes: parseInt(totalPacientes.rows[0].count),
